@@ -1,7 +1,8 @@
 use clap::{Command, arg};
 use std::{io::{self, Write}, fs::read_to_string};
+use anyhow::Result;
 
-fn main() {
+fn main() -> Result<()> {
     let cmd = Command::new("yerba")
         .bin_name("yerba")
         .subcommand_required(true)
@@ -19,34 +20,36 @@ fn main() {
     match matches.subcommand() {
         Some(("run", sub_matches)) => {
             let file = sub_matches.get_one::<String>("FILE").expect("required");
-            run_file(file);
+            run_file(file)
         }
         Some(("repl", _)) => run_repl(),
         _ => unreachable!("we've goofed up"),
-    };
-}
-
-fn run_file(file: &String) {
-    for line in read_to_string(file).unwrap().lines() {
-        run(line.to_string());
     }
 }
 
-fn run_repl() {
+fn run_file(file: &String) -> Result<()> {
+    for line in read_to_string(file)?.lines() {
+        run(line.to_string())?;
+    }
+    Ok(())
+}
+
+fn run_repl() -> Result<()> {
     loop {
         print!(">> ");
         let _ = io::stdout().flush();
 
         let mut buffer = String::new();
-        io::stdin().read_line(&mut buffer).unwrap();
+        io::stdin().read_line(&mut buffer)?;
         if buffer.trim().is_empty() {
             break;
         }
-        run(buffer);
+        run(buffer)?;
     }
+    Ok(())
 }
 
-fn run(source: String) {
+fn run(source: String) -> Result<()> {
     let chars: Vec<char> = source
         .chars()
         .filter(|c| !c.is_whitespace())
@@ -54,4 +57,5 @@ fn run(source: String) {
     for c in chars {
         println!("{}", c);
     }
+    Ok(())
 }
